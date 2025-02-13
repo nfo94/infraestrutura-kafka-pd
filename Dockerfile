@@ -9,7 +9,3 @@ RUN pip install --no-cache-dir poetry && \
     poetry install --no-dev --no-interaction --no-ansi
 
 COPY . .
-
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "--port", "8000"]
