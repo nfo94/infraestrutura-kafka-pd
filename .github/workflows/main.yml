@@ -20,12 +20,13 @@ jobs:
 
       - name: Install Poetry
         run: |
-          pip install --no-cache-dir poetry && \
-          poetry config virtualenvs.create false && \
-          poetry install --no-dev --no-interaction --no-ansi
+          pip install poetry==1.7.0
 
       - name: Install dependencies
-        run: poetry install
+        run: |
+          poetry config virtualenvs.create false
+          poetry install --no-root --only main
 
       - name: Run Ruff
-        run: poetry run ruff check
+        run: |
+          poetry run ruff check .
