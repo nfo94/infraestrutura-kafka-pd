@@ -27,6 +27,7 @@ jobs:
           poetry config virtualenvs.create false
           poetry install --no-root --only main
 
-      - name: Run Ruff
+      - name: Run lingting
         run: |
+          poetry add ruff && \
           poetry run ruff check .
