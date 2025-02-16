@@ -1,12 +1,20 @@
 ## Kafka infrastructure project
 
-This is an infrastructure project to primarily showcase Apache Kafka.
+This is an infrastructure project to primarily showcase Apache Kafka. It's originated
+from a proposed system design for a real time fraud detection system, for educational
+purposes. Be warned that the solution was not used in a real interview or project.
 
 ### High level design
 
+![high level design](highleveldesign.png)
 
-### Design decisions
+### Data model
 
+![data model](datamodel.png)
+
+### Kafka design
+
+![kafka design](kafkadesign.png)
 
 ### Technology decisions
 
