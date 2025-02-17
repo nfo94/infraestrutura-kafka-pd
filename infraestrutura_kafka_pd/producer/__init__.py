@@ -1,29 +1,36 @@
 import asyncio
-import logging
-from time import sleep
 
-import config
+import fastavro
 from aiokafka import AIOKafkaProducer
+from config import KAFKA_BOOTSTRAP_SERVERS, TOPIC_TRANSACTIONS
+from models import Transaction
+from utils import TransactionGenerator
 
-from ..models import KafkaMessageFactory
 
+async def produce():
+    producer = AIOKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
 
-async def main():
-    producer = AIOKafkaProducer(bootstrap_server=config.KAFKA_BOOTSTRAP_SERVERS)
     await producer.start()
 
+    transaction_generator = TransactionGenerator(trans_per_sec=10)
+
     try:
-        while True:
-            new_message = KafkaMessageFactory().create_kafka_message()
-            await producer.send_and_wait(
-                topic=config.KAFKA_TOPIC, value=new_message.dict()
-            )
-            sleep(8)
-    except Exception as e:
-        logging.error(f"Error sending message to Kafka: {e}")
+        for tx in transaction_generator.generate_transactions():
+            transaction = Transaction(**tx.__dict__)
+
+            schema = fastavro.schema.load_schema("schemas/transaction.avsc")
+            message = fastavro.schemaless_writer(transaction.to_dict(), schema)
+
+            await producer.send_and_wait(TOPIC_TRANSACTIONS, message)
+
+            print(f"Mensagem produzida: {transaction}")
+
+            # Intervalo entre transações
+            await asyncio.sleep(0.1)
+
     finally:
         await producer.stop()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(produce())
