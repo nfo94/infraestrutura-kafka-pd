@@ -1,6 +1,21 @@
 version: "3.8"
 
 services:
+  kafka_setup:
+    build:
+      context: .
+    container_name: kafka_setup
+    networks:
+      - pd
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    command: poetry run python /infraestrutura_kafka_pd/kafka_setup/__init__.py
+
   producer:
     build:
       context: .
@@ -8,6 +23,8 @@ services:
     networks:
       - pd
     depends_on:
+      kafka_setup:
+        condition: service_healthy
       kafka1:
         condition: service_healthy
       kafka2:
@@ -23,6 +40,8 @@ services:
     networks:
       - pd
     depends_on:
+      kafka_setup:
+        condition: service_healthy
       kafka1:
         condition: service_healthy
       kafka2:
@@ -65,7 +84,7 @@ services:
     volumes:
       - kafka1-data:/var/lib/kafka/data
     healthcheck:
-      test: nc -z localhost 9091 || exit 1
+      test: nc -z localhost 9092 || exit 1
       interval: 15s
       timeout: 60s
       retries: 3
@@ -90,7 +109,7 @@ services:
     volumes:
       - kafka2-data:/var/lib/kafka/data
     healthcheck:
-      test: nc -z localhost 9091 || exit 1
+      test: nc -z localhost 9093 || exit 1
       interval: 15s
       timeout: 60s
       retries: 3
@@ -116,7 +135,7 @@ services:
     volumes:
       - kafka3-data:/var/lib/kafka/data
     healthcheck:
-      test: nc -z localhost 9091 || exit 1
+      test: nc -z localhost 9094 || exit 1
       interval: 15s
       timeout: 60s
       retries: 3
