@@ -1,28 +1,15 @@
-from datetime import datetime
-
 from pydantic import BaseModel
 
 
-class Owner(BaseModel):
-    email: str
-    creator: str
+class Transaction(BaseModel):
+    timestamp: int
+    transaction_id: int
+    user_id: int
+    card_id: int
+    site_id: int
+    value: float
+    location_id: int
+    country: str
 
-
-class KafkaMessage(BaseModel):
-    pk: int
-    uid: str
-    name: str
-    version: str
-    timestamp: datetime
-    owner: Owner
-
-class TransformedMessage(BaseModel):
-    pk: int
-    uid: str
-    name: str
-    version: str
-    timestamp: datetime
-    owner: Owner
-    origin: str = "Consumer 2"
-    company_name: str
-    company_type: str
+    def to_dict(self):
+        return self.model_dump()
