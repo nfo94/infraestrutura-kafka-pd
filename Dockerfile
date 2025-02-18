@@ -21,3 +21,5 @@ RUN poetry config virtualenvs.create false && \
     poetry install --no-root --only main
 
 COPY . .
+
+RUN chmod +x /app/infraestrutura_kafka_pd/kafka_setup/__init__.py
