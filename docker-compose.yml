@@ -50,6 +50,18 @@ services:
         condition: service_healthy
     command: poetry run python /infraestrutura_kafka_pd/consumer/__init__.py
 
+  postgresql:
+    image: postgres:13
+    container_name: postgresql
+    networks:
+      - pd
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pd
+    ports:
+      - "5432:5432"
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
     container_name: zookeeper
