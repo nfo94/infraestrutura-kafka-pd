@@ -1,10 +1,11 @@
 import asyncio
+import logging
 
-import fastavro
 from aiokafka import AIOKafkaProducer
 from config import KAFKA_BOOTSTRAP_SERVERS, TOPIC_TRANSACTIONS
 from models import Transaction
-from utils import TransactionGenerator
+
+from .transaction_generator import TransactionGenerator
 
 
 async def produce():
@@ -18,14 +19,11 @@ async def produce():
         for tx in transaction_generator.generate_transactions():
             transaction = Transaction(**tx.__dict__)
 
-            schema = fastavro.schema.load_schema("schemas/transaction.avsc")
-            message = fastavro.schemaless_writer(transaction.to_dict(), schema)
+            await producer.send_and_wait(TOPIC_TRANSACTIONS, transaction.to_dict())
 
-            await producer.send_and_wait(TOPIC_TRANSACTIONS, message)
+            logging.info(f"Message produced: {transaction}")
 
-            print(f"Mensagem produzida: {transaction}")
-
-            # Intervalo entre transações
+            # Interval between transactions
             await asyncio.sleep(0.1)
 
     finally:
