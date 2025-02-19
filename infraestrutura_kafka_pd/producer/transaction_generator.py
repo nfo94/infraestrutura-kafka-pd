@@ -1,14 +1,26 @@
-import logging
 import queue
 import random
 import threading
 import time
 from typing import Optional
 
-from models import Transaction
+from pydantic import BaseModel
+
+
+class Transaction(BaseModel):
+    timestamp: int
+    transaction_id: int
+    user_id: int
+    card_id: int
+    site_id: int
+    value: float
+    location_id: int
+    country: str
 
 
 class TransactionGenerator:
+    """Utility class responsible for generating valid and invalid transactions."""
+
     _transactions_queue: queue.Queue
     _trans_per_sec: int
     _fraudulent_transactions_freq: int
@@ -92,7 +104,7 @@ class TransactionGenerator:
             )
             transactions.append(tx)
             max_value = max(max_value, tx.value)
-            card_id = tx.value
+            card_id = tx.card_id
 
         transactions.append(
             self.generate_valid_transaction(
@@ -154,14 +166,3 @@ class TransactionGenerator:
             transaction = self._transactions_queue.get()
             yield transaction
             self._transactions_queue.task_done()
-
-
-if __name__ == "__main__":
-    transaction_generator = TransactionGenerator(trans_per_sec=10)
-    count = 0
-    try:
-        for tx in transaction_generator.generate_transactions():
-            count += 1
-            logging.info(tx)
-    except KeyboardInterrupt:
-        logging.info(f"{count} messages generated.")
