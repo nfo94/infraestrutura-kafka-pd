@@ -15,4 +15,4 @@ COPY pyproject.toml poetry.lock ./
 
 RUN poetry config virtualenvs.create false && poetry install --no-root --no-interaction --no-ansi
 
-COPY . .
+COPY infraestrutura_kafka_pd/ infraestrutura_kafka_pd/
