@@ -1,46 +1,66 @@
 import asyncio
 import json
 import logging
-from os import getenv
 from datetime import datetime
+from os import getenv
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-from models import Transaction
 
 from .fraud_detector import detector
 
+"""
+Component responsible for consuming messages from the Kafka topic `transactions`, producing
+messages to the topic `fraudulent_transactions`.
+"""
+
 
 async def consume():
-    consumer = AIOKafkaConsumer(
-        getenv("TOPIC_TRANSACTIONS"),
-        bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS"),
-        group_id="fraud-detection-group",
-    )
-    producer = AIOKafkaProducer(bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS"))
-
-    await consumer.start()
-    await producer.start()
+    logging.basicConfig(level=logging.INFO)
 
     try:
-        async for msg in consumer:
-            transaction_data = msg.value
-            transaction = Transaction(**transaction_data)
+        consumer = AIOKafkaConsumer(
+            getenv("TOPIC_TRANSACTIONS"),
+            bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS"),
+            group_id="transactions_group",
+            auto_offset_reset="earliest",
+        )
+        logging.info(f"Subscribing to topic: {getenv('TOPIC_TRANSACTIONS')}")
+        await consumer.start()
+        logging.info("Finished subscribing.")
 
-            fraud_type, fraud_params = await detector(transaction)
+        producer = AIOKafkaProducer(bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS"))
+        logging.info("Initializing producer...")
+        await producer.start()
+        logging.info("Producer initialized successfully.")
+
+        async for msg in consumer:
+            logging.info(f"Message received: {msg}")
+            raw_data = msg.value
+            transaction_data = json.loads(raw_data.decode("utf-8"))
+            logging.info(f"Message decoded: {transaction_data}")
+
+            logging.info("Calling fraud detector...")
+            fraud_type, fraud_params = await detector(transaction_data)
             if fraud_type:
                 fraud_message = {
-                    "user_id": transaction.user_id,
+                    "user_id": transaction_data["user_id"],
                     "fraud_type": fraud_type,
                     "fraud_params": fraud_params,
                     "timestamp": datetime.now().isoformat(),
                 }
 
+                logging.info(f"Fraud detected: {fraud_message}")
                 await producer.send_and_wait(
-                    getenv("TOPIC_FRAUDULENT_TRANSACTIONS"), json.dumps(fraud_message).encode()
+                    getenv("TOPIC_FRAUDULENT_TRANSACTIONS"),
+                    json.dumps(fraud_message).encode("utf-8"),
+                    key=str(transaction_data["user_id"]).encode(),
                 )
 
-                logging.info(f"Fraud detected: {fraud_message}")
+    except Exception as e:
+        logging.error(f"Error while consuming transactions: {e}")
+
     finally:
+        logging.info("Stopping consumer and producer...")
         await consumer.stop()
         await producer.stop()
 
