@@ -14,14 +14,14 @@ from .transaction_generator import TransactionGenerator
 async def produce():
     logging.basicConfig(level=logging.INFO)
 
-    producer = AIOKafkaProducer(bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS"))
-    await producer.start()
-
-    transaction_generator = TransactionGenerator(trans_per_sec=10)
-
-    start_time = time.time()
-
     try:
+        producer = AIOKafkaProducer(bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS"))
+        await producer.start()
+
+        transaction_generator = TransactionGenerator(trans_per_sec=10)
+
+        start_time = time.time()
+
         for tx in transaction_generator.generate_transactions():
             # Will produce transactions for 10 seconds
             if time.time() - start_time > 10:
@@ -30,7 +30,9 @@ async def produce():
             tx_to_dict = tx.model_dump()
 
             await producer.send_and_wait(
-                getenv("TOPIC_TRANSACTIONS"), json.dumps(tx_to_dict).encode("utf-8")
+                getenv("TOPIC_TRANSACTIONS"),
+                json.dumps(tx_to_dict).encode("utf-8"),
+                key=str(tx_to_dict["user_id"]).encode(),
             )
 
             logging.info(f"Message produced: {tx_to_dict}")
@@ -42,6 +44,7 @@ async def produce():
         logging.error(f"Error while producing transactions: {e}")
 
     finally:
+        logging.info("Stoping producer...")
         await producer.stop()
 
 
