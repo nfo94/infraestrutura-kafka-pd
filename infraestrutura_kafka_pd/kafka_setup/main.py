@@ -16,7 +16,6 @@ def main():
         admin_client = KafkaAdminClient(
             bootstrap_servers=getenv("KAFKA_BOOTSTRAP_SERVERS")
         )
-        logging.info(f"Admin client: {admin_client}")
 
         topics = [
             NewTopic(
@@ -30,18 +29,19 @@ def main():
                 replication_factor=3,
             ),
         ]
-        logging.info(f"Topics: {topics}")
 
+        logging.info("Creating topics...")
         admin_client.create_topics(topics)
-
-        admin_client.close()
 
     except TopicAlreadyExistsError:
         logging.info("Topics already exist. Exiting...")
-        return
 
     except Exception as e:
         logging.error(f"Error while creating topics: {e}")
+
+    finally:
+        logging.info("Closing Kafka admin client...")
+        admin_client.close()
 
 
 if __name__ == "__main__":
