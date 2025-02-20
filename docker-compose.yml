@@ -11,11 +11,6 @@ services:
       POSTGRES_DB: pd
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "5432"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
@@ -30,11 +25,6 @@ services:
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-log:/var/lib/zookeeper/log
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   kafka1:
     image: confluentinc/cp-kafka:7.0.1
@@ -43,7 +33,7 @@ services:
       - pd
     depends_on:
       zookeeper:
-        condition: service_healthy
+        condition: service_started
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -69,7 +59,7 @@ services:
       - pd
     depends_on:
       zookeeper:
-        condition: service_healthy
+        condition: service_started
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -82,11 +72,6 @@ services:
       - "9093:9093"
     volumes:
       - kafka2-data:/var/lib/kafka/data
-    healthcheck:
-      test: nc -z localhost 9093 || exit 1
-      interval: 15s
-      timeout: 60s
-      retries: 3
 
   kafka3:
     image: confluentinc/cp-kafka:7.0.1
@@ -95,7 +80,7 @@ services:
       - pd
     depends_on:
       zookeeper:
-        condition: service_healthy
+        condition: service_started
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -108,11 +93,6 @@ services:
       - "9094:9094"
     volumes:
       - kafka3-data:/var/lib/kafka/data
-    healthcheck:
-      test: nc -z localhost 9094 || exit 1
-      interval: 15s
-      timeout: 60s
-      retries: 3
 
   akhq:
     image: tchiotludo/akhq
@@ -139,16 +119,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9093,kafka3:9094"
       TOPIC_TRANSACTIONS: "transactions"
       TOPIC_FRAUDULENT_TRANSACTIONS: "fraudulent_transactions"
-    volumes:
-      - ./:/app
     networks:
       - pd
     depends_on:
       kafka1:
-        condition: service_healthy
-      kafka2:
-        condition: service_healthy
-      kafka3:
         condition: service_healthy
     command: poetry run python -m infraestrutura_kafka_pd.kafka_setup.main
 
@@ -161,36 +135,45 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9093,kafka3:9094"
       TOPIC_TRANSACTIONS: "transactions"
-      TOPIC_FRAUDULENT_TRANSACTIONS: "fraudulent_transactions"
-    volumes:
-      - ./:/app
     depends_on:
       kafka_setup:
         condition: service_completed_successfully
       kafka1:
         condition: service_healthy
-      kafka2:
-        condition: service_healthy
-      kafka3:
-        condition: service_healthy
     command: poetry run python -m infraestrutura_kafka_pd.producer.main
 
-#   consumer:
-#     container_name: consumer
-#     build:
-#       context: .
-#     networks:
-#       - pd
-#     depends_on:
-#       kafka_setup:
-#         condition: service_healthy
-#       kafka1:
-#         condition: service_healthy
-#       kafka2:
-#         condition: service_healthy
-#       kafka3:
-#         condition: service_healthy
-#     command: poetry run python -m infraestrutura_kafka_pd.consumer.main
+  consumer:
+    build:
+      context: .
+    container_name: consumer
+    networks:
+      - pd
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9093,kafka3:9094"
+      TOPIC_TRANSACTIONS: "transactions"
+      TOPIC_FRAUDULENT_TRANSACTIONS: "fraudulent_transactions"
+    depends_on:
+      producer:
+        condition: service_completed_successfully
+      kafka1:
+        condition: service_healthy
+    command: poetry run python -m infraestrutura_kafka_pd.consumer.main
+
+  consumer_to_db:
+    build:
+      context: .
+    container_name: consumer_to_db
+    networks:
+      - pd
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka1:9092,kafka2:9093,kafka3:9094"
+      TOPIC_FRAUDULENT_TRANSACTIONS: "fraudulent_transactions"
+    depends_on:
+        consumer:
+            condition: service_completed_successfully
+        postgresql:
+            condition: service_healthy
+    command: poetry run python -m infraestrutura_kafka_pd.consumer_to_db.main
 
 networks:
   pd:
