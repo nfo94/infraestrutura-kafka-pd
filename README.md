@@ -23,9 +23,10 @@ run:
 make u
 ```
 
-This command will run all the containers necessary for the project. Take a look at the
-logs of the applications. If you wish to see the topics in AKHQ (a graphical user
-interface) access http://localhost:8080/. You'll see something like this:
+This command will run all the containers necessary for the project (check `docker-compose.yml`).
+Take a look at the logs of the applications. If you wish to see the topics in AKHQ
+(a graphical user interface) access http://localhost:8080/. You'll see something like
+this:
 
 ![akhq](akhq.png)
 
