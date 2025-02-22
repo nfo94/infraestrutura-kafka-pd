@@ -10,7 +10,7 @@ not used in a real interview or project.
 This is the Kafka design of the practical part of the exercise, and what's inside this
 repository:
 
-![kafka design](kafkadesign.png)
+-
 
 ### High level design
 
@@ -24,10 +24,54 @@ Data model solution for the theorical part:
 
 ![data model](datamodel.png)
 
-### How to run this project
+### How to run this project and check the data
 
 First, make sure you have `Docker` and `docker compose` installed on your machine. Then
-run `make u`. This command will run all the containers necessary for the project. Take
-a look at the logs of the applications. If you wish to see the topics in AKHQ (a
-graphical user interface) access http://localhost:8080/. Hit `cmd/ctrl+c` in your
-terminal if you wish to stop the containers. To run them in the background: `make ud`.
+run:
+
+```bash
+make u
+```
+
+This command will run all the containers necessary for the project. Take a look at the
+logs of the applications. If you wish to see the topics in AKHQ (a graphical user
+interface) access http://localhost:8080/. You'll see something like this:
+
+![akhq](akhq.png)
+
+If you wish to see the transactions identified as fradulent you can enter the PostgreSQL
+container in another terminal:
+
+```
+make pg
+```
+
+List the database:
+
+```bash
+\l
+```
+
+Connect to the created `fraudulent_transactions` database:
+
+```bash
+\c fraudulent_transactions
+```
+
+Describe tables:
+
+```bash
+\dt
+```
+
+Query for some fraud transactions:
+
+```bash
+SELECT * FROM fraudulent_transactions WHERE fraud_type='high_frequency';
+```
+
+Hit `cmd/ctrl+d` if you wish to leave `psql`. Hit `cmd/ctrl+c` in your terminal if you wish to stop the containers. To run them in the background:
+
+```bash
+make ud
+```

@@ -6,3 +6,6 @@ ud:
 
 d:
 	docker compose down --remove-orphans -v
+
+pg:
+	docker exec -it postgres /bin/bash
