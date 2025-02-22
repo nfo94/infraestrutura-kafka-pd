@@ -27,17 +27,7 @@ Data model solution for the theorical part:
 ### How to run this project
 
 First, make sure you have `Docker` and `docker compose` installed on your machine. Then
-run this command:
-
-```bash
-make u
-```
-
-This command will run all the containers necessary for the project. Take a look at the
-logs of the applications. If you wish to see the topics in AKHQ (a graphical user interface)
-access http://localhost:8080/. Hit `cmd/ctrl+c` in your terminal if you wish to stop the
-containers. To run them in the background:
-
-```make
-make ud
-```
+run `make u`. This command will run all the containers necessary for the project. Take
+a look at the logs of the applications. If you wish to see the topics in AKHQ (a
+graphical user interface) access http://localhost:8080/. Hit `cmd/ctrl+c` in your
+terminal if you wish to stop the containers. To run them in the background: `make ud`.
