@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from datetime import datetime
 from os import getenv
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
@@ -9,8 +8,8 @@ from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from .fraud_detector import detector
 
 """
-Component responsible for consuming messages from the Kafka topic `transactions`, producing
-messages to the topic `fraudulent_transactions`.
+Component responsible for consuming messages from the Kafka topic `transactions`,
+producing messages to the topic `fraudulent_transactions`.
 """
 
 
@@ -40,16 +39,9 @@ async def consume():
             logging.info(f"Message decoded: {transaction_data}")
 
             logging.info("Calling fraud detector...")
-            fraud_type, fraud_params = await detector(transaction_data)
-            if fraud_type:
-                fraud_message = {
-                    "user_id": transaction_data["user_id"],
-                    "fraud_type": fraud_type,
-                    "fraud_params": fraud_params,
-                    "timestamp": datetime.now().isoformat(),
-                }
-
-                logging.info(f"Fraud detected: {fraud_message}")
+            fraud, fraud_message = await detector(transaction_data)
+            if fraud:
+                logging.info("Fraud detected")
                 await producer.send_and_wait(
                     getenv("TOPIC_FRAUDULENT_TRANSACTIONS"),
                     json.dumps(fraud_message).encode("utf-8"),
