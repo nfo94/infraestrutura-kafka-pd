@@ -5,26 +5,16 @@ from a proposed system design and a proposed practical coding problem for a real
 fraud detection system, for educational purposes. Be warned that the design or code were
 not used in a real interview or project.
 
-### Kafka design
+### Kafka usage
 
-This is the Kafka design of the practical part of the exercise, and what's inside this
-repository:
+In this repository we have a Kafka cluster with 3 brokers, with offset topic and
+tansaction state log replications factors of 3 for both. We require a minimum of 2 in
+sync replicas for the transaction state log, and we also allow deletion of topics for
+testing reasons.
 
--
+Here we're using Zookeeper for coordination of the 3 nodes.
 
-### High level design
-
-System design solution for the teorical part of the exercise:
-
-![high level design](highleveldesign.png)
-
-### Data model
-
-Data model solution for the theorical part:
-
-![data model](datamodel.png)
-
-### How to run this project and check the data
+### How to run this project
 
 First, make sure you have `Docker` and `docker compose` installed on your machine. Then
 run:
@@ -75,3 +65,15 @@ Hit `cmd/ctrl+d` if you wish to leave `psql`. Hit `cmd/ctrl+c` in your terminal 
 ```bash
 make ud
 ```
+
+### High level design
+
+System design solution for the teorical part of the exercise:
+
+![high level design](highleveldesign.png)
+
+### Data model
+
+Data model solution for the theorical part:
+
+![data model](datamodel.png)
