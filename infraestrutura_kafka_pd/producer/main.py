@@ -23,8 +23,8 @@ async def produce():
         start_time = time.time()
 
         for tx in transaction_generator.generate_transactions():
-            # Will produce transactions for 10 seconds
-            if time.time() - start_time > 10:
+            # Will produce transactions for 20 seconds
+            if time.time() - start_time > 20:
                 break
 
             tx_to_dict = tx.model_dump()
