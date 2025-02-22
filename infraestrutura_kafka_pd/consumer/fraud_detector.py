@@ -1,54 +1,65 @@
-import logging
+from datetime import datetime, timedelta
 
-# Structure to save the context of the user
-user_context = {}
+user_transactions = {}
 
 
 async def detector(transaction: dict):
-    logging.info(f"Detecting fraud for transaction: {transaction}")
+    fraud = False
+    fraud_message = None
 
     user_id = transaction["user_id"]
-    if user_id not in user_context:
-        user_context[user_id] = {
-            "last_transaction": None,
-            "max_value": 0,
-            "last_country": None,
-        }
+    timestamp = datetime.fromtimestamp(transaction["timestamp"])
+    amount = transaction["value"]
+    country = transaction["country"]
 
-    context = user_context[user_id]
-    fraud_type = None
-    fraud_params = {}
+    if user_id not in user_transactions:
+        user_transactions[user_id] = []
 
-    logging.info("Analyzing rule 1: high frequency...")
-    if (
-        context["last_transaction"]
-        and (transaction["timestamp"] - context["last_transaction"]["timestamp"]) < 300
-    ):
-        fraud_type = "Alta Frequência"
-        fraud_params = {
-            "interval": transaction["timestamp"] - context["last_transaction"]["timestamp"]
-        }
+    transactions = user_transactions[user_id]
 
-    logging.info("Analyzing rule 2: high value...")
-    if transaction["value"] > 2 * context["max_value"]:
-        fraud_type = "High value"
-        fraud_params = {
-            "value": transaction["value"],
-            "max_value": context["max_value"],
-        }
+    if len(transactions) >= 1:
+        last_transaction = transactions[-1]
+        time_diff = timestamp - last_transaction["timestamp"]
+        if time_diff < timedelta(minutes=5) and last_transaction["amount"] != amount:
+            fraud = True
+            fraud_message = {
+                "user_id": user_id,
+                "fraud_type": "high_frequency",
+                "fraud_params": {
+                    "last_amount": last_transaction["amount"],
+                    "current_amount": amount,
+                    "time_diff_seconds": time_diff.total_seconds(),
+                },
+                "timestamp": timestamp.isoformat(),
+            }
 
-    logging.info("Analyzing rule 3: another country...")
-    if context["last_country"] and context["last_country"] != transaction["country"]:
-        fraud_type = "Another country"
-        fraud_params = {
-            "last_country": context["last_country"],
-            "current_country": transaction["country"],
-        }
+    if not fraud and len(transactions) >= 1:
+        max_amount = max(t["amount"] for t in transactions)
+        if amount > 2 * max_amount:
+            fraud = True
+            fraud_message = {
+                "user_id": user_id,
+                "fraud_type": "high_value",
+                "fraud_params": {"max_amount": max_amount, "current_amount": amount},
+                "timestamp": timestamp.isoformat(),
+            }
 
-    logging.info("Updating user context...")
-    context["last_transaction"] = transaction
-    context["max_value"] = max(context["max_value"], transaction["value"])
-    context["last_country"] = transaction["country"]
+    if not fraud and len(transactions) >= 1:
+        last_transaction = transactions[-1]
+        time_diff = timestamp - last_transaction["timestamp"]
+        if time_diff < timedelta(hours=2) and last_transaction["country"] != country:
+            fraud = True
+            fraud_message = {
+                "user_id": user_id,
+                "fraud_type": "other_country",
+                "fraud_params": {
+                    "last_country": last_transaction["country"],
+                    "current_country": country,
+                    "time_diff_seconds": time_diff.total_seconds(),
+                },
+                "timestamp": timestamp.isoformat(),
+            }
 
-    logging.info("Returning detector result...")
-    return fraud_type, fraud_params
+    transactions.append({"timestamp": timestamp, "amount": amount, "country": country})
+
+    return fraud, fraud_message
