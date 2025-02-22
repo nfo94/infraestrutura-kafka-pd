@@ -8,6 +8,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fraudulent_transactions
     ports:
       - "5432:5432"
 
@@ -170,9 +171,10 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_HOST: postgresql
+      DB_NAME: fraudulent_transactions
     depends_on:
-        consumer:
-            condition: service_started
+        - consumer
+        - postgresql
     command: poetry run python -m infraestrutura_kafka_pd.consumer_to_db.main
 
 networks:
