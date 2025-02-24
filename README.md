@@ -69,7 +69,7 @@ make ud
 
 ### High level design
 
-System design solution for the teorical part of the exercise:
+System design solution for the theorical part of the exercise:
 
 ![high level design](highleveldesign.png)
 
